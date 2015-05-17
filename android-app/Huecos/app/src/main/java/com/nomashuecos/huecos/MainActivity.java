@@ -311,12 +311,13 @@ public class MainActivity extends Activity implements LocationListener, SensorEv
             TextView TextJason = (TextView) findViewById(R.id.TextJason);
             //TextJason.setText(String.valueOf(hole.toString()));
 
-            //Thread myThread = new Thread(new Runnable(){
-            //    @Override
-            //    public void run()
-            //    {
+            Thread myThread = new Thread(new Runnable(){
+                @Override
+                public void run()
+                {
                     //SendJSON(hole);
                     String url = "http://192.168.1.16/bogtosfo/server-app/addpoint.php?track_id=1&x="+Longitud+"&y="+Latitud+"&t="+time+"&ax="+x+"&ay="+y+"&z="+z;
+                    //String url = "http://172.20.10.2./holebook/addpoint.php?track_id=1&x="+Longitud+"&y="+Latitud+"&t="+time+"&ax="+x+"&ay="+y+"&z="+z;
 
                     if (android.os.Build.VERSION.SDK_INT > 9) {
                         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
@@ -346,9 +347,9 @@ public class MainActivity extends Activity implements LocationListener, SensorEv
                         inputStream = httpResponse.getEntity().getContent();
 
                         // 10. convert inputstream to string
-                        if(inputStream != null)
+                        //if(inputStream != null)
 
-                        TextJason.setText(convertInputStreamToString(inputStream));
+                        //TextJason.setText(convertInputStreamToString(inputStream));
                         //Log.i("Response from server", jsonResponse.getString("msg"));
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -357,11 +358,11 @@ public class MainActivity extends Activity implements LocationListener, SensorEv
 
 
 
-        //        }
-        //    });
+                }
+            });
 
 
-        //    myThread.start();
+            myThread.start();
 
 
         }
