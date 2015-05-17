@@ -1,0 +1,10 @@
+Instalacion de la base de datos.
+
+Prerequesitos:
+Postgres 9.4
+Postgis 2.1
+
+ejecutar:
+
+importar los datos descargado de http://www.ideca.gov.co/
+
