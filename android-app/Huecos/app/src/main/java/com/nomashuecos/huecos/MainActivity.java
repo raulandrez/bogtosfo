@@ -22,6 +22,7 @@ import android.widget.TextView;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -29,6 +30,10 @@ import org.apache.http.params.HttpConnectionParams;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Date;
 import java.util.List;
 
@@ -74,10 +79,14 @@ public class MainActivity extends Activity implements LocationListener, SensorEv
 
     private float Px,Py,Pz;
 
+    private float x,y,z;
+
     private float cal;
 
     private double Longitud;
     private double Latitud;
+
+    private Long time;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,7 +103,7 @@ public class MainActivity extends Activity implements LocationListener, SensorEv
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-        cal = 1;
+        cal = 5;
         TextView Tcal = (TextView) findViewById(R.id.TextCal);
         Tcal.setText(String.valueOf(cal));
 
@@ -257,13 +266,13 @@ public class MainActivity extends Activity implements LocationListener, SensorEv
     @Override
     public void onSensorChanged(SensorEvent event) {
 
-        Long time = System.currentTimeMillis();
+        time = System.currentTimeMillis();
 
         float[] values = event.values;
         // Movement
-        float x = Px - values[0];
-        float y = Py - values[1];
-        float z = Pz - values[2];
+         x = Px - values[0];
+         y = Py - values[1];
+         z = Pz - values[2];
 
         boolean HUECO = false;
 
@@ -287,26 +296,28 @@ public class MainActivity extends Activity implements LocationListener, SensorEv
 
             final JSONObject hole = new JSONObject();
             try{
+                hole.put("track_id", "1");
                 hole.put("x", Longitud);
                 hole.put("y", Latitud);
                 hole.put("t", time);
-                hole.put("Ax", new Float(x));
-                hole.put("Ay", new Float(y));
-                hole.put("Az", new Float(z));
+                hole.put("ax", new Float(x));
+                hole.put("ay", new Float(y));
+                hole.put("az", new Float(z));
             }
             catch (JSONException e)
             {
                 e.printStackTrace();
             }
             TextView TextJason = (TextView) findViewById(R.id.TextJason);
-            TextJason.setText(String.valueOf(hole.toString()));
+            //TextJason.setText(String.valueOf(hole.toString()));
 
-            Thread myThread = new Thread(new Runnable(){
-                @Override
-                public void run()
-                {
+            //Thread myThread = new Thread(new Runnable(){
+            //    @Override
+            //    public void run()
+            //    {
                     //SendJSON(hole);
-                    String url = "http://192.168.1.16/bogtosfo/server-app/addpoint.php";
+                    String url = "http://192.168.1.16/bogtosfo/server-app/addpoint.php?track_id=1&x="+Longitud+"&y="+Latitud+"&t="+time+"&ax="+x+"&ay="+y+"&z="+z;
+
                     if (android.os.Build.VERSION.SDK_INT > 9) {
                         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
                         StrictMode.setThreadPolicy(policy);
@@ -316,35 +327,58 @@ public class MainActivity extends Activity implements LocationListener, SensorEv
                     HttpConnectionParams.setConnectionTimeout(client.getParams(), 100000);
 
                     HttpPost post = new HttpPost(url);
-                    TextView TextJason = (TextView) findViewById(R.id.TextJason);
+                    //HttpGet get = new HttpGet(url);
+                    //TextView TextJason = (TextView) findViewById(R.id.TextJason);
                     try {
                         StringEntity se = new StringEntity("json="+hole.toString());
-                        post.addHeader("content-type", "application/x-www-form-urlencoded");
-                        post.setEntity(se);
+                        post.setHeader("Accept", "application/json");
+                        post.setHeader("Content-type", "application/json");
+
+
+                        //post.setEntity(se);
 
                         HttpResponse response;
                         response = client.execute(post);
-                        //String resFromServer = org.apache.http.util.EntityUtils.toString(response.getEntity());
+                        HttpResponse httpResponse = client.execute(post);
 
-                        //JSONObject jsonResponse = new JSONObject(resFromServer);
-                        //TextJason.setText(jsonResponse.toString());
+                        // 9. receive response as inputStream
+                        InputStream inputStream = null;
+                        inputStream = httpResponse.getEntity().getContent();
+
+                        // 10. convert inputstream to string
+                        if(inputStream != null)
+
+                        TextJason.setText(convertInputStreamToString(inputStream));
                         //Log.i("Response from server", jsonResponse.getString("msg"));
                     } catch (Exception e) {
                         e.printStackTrace();
-                        TextJason.setText(e.getMessage());
+                        //TextJason.setText(e.getMessage());
                     }
 
 
 
-                }
-            });
+        //        }
+        //    });
 
 
-            myThread.start();
+        //    myThread.start();
 
 
         }
     }
+
+    private static String convertInputStreamToString(InputStream inputStream) throws IOException {
+        BufferedReader bufferedReader = new BufferedReader( new InputStreamReader(inputStream));
+        String line = "";
+        String result = "";
+        while((line = bufferedReader.readLine()) != null)
+            result += line;
+
+        inputStream.close();
+        return result;
+
+    }
+
 
     public void MenusButtonClick(View view) {
         cal = cal - (float)0.5;
@@ -352,6 +386,8 @@ public class MainActivity extends Activity implements LocationListener, SensorEv
         Tcal.setText(String.valueOf(cal));
 
     }
+
+
 
     public void MoreButtonClick(View view) {
         cal = cal + (float)0.5;
